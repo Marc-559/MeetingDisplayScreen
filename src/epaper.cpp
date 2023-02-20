@@ -11,7 +11,6 @@
 
 #include <U8g2_for_Adafruit_GFX.h>
 
-
 // select the display class (only one), matching the kind of display panel
 //#define GxEPD2_DISPLAY_CLASS GxEPD2_BW
 #define GxEPD2_DISPLAY_CLASS GxEPD2_3C
@@ -72,14 +71,12 @@ GxEPD2_DISPLAY_CLASS<GxEPD2_DRIVER_CLASS, MAX_HEIGHT(GxEPD2_DRIVER_CLASS)> displ
 //#include "bitmaps/Bitmaps3c176x264.h" // 2.7"  b/w/r
 #include "bitmaps/Bitmaps3c400x300.h" // 4.2"  b/w/r
 
-
 U8G2_FOR_ADAFRUIT_GFX u8g2Fonts;
 #define schrift_fuer_now u8g2_font_helvB18_te
 #define schrift_fuer_past_and_next u8g2_font_helvB14_te
 
 void epaper_setup()
 {
-
   Serial.println();
   Serial.println("setup");
   display.init(115200); // uses standard SPI pins, e.g. SCK(18), MISO(19), MOSI(23), SS(5)
@@ -106,15 +103,11 @@ void epaper_setup()
 // the size is increased in setPartialWindow() if x or w are not multiple of 8 for even rotation, y or h for odd rotation
 // see also comment in GxEPD2_BW.h, GxEPD2_3C.h or GxEPD2_GFX.h for method setPartialWindow()
 
-
-
 void calender_text(string raumname, string raumnummer, string date)
 {
-
   u8g2Fonts.setFontMode(1);                 // use u8g2 transparent mode (this is default)
   u8g2Fonts.setFontDirection(0);            // left to right (this is default)
   u8g2Fonts.setFont(u8g2_font_helvR14_tf);  // select u8g2 font from here: https://github.com/olikraus/u8g2/wiki/fntlistall
-
   
   display.setRotation(0);
   
@@ -149,7 +142,6 @@ void calender_text(string raumname, string raumnummer, string date)
     display.drawRect(0,40,display.width(),15,GxEPD_YELLOW);
     display.fillRect(0,40,display.width(),15,GxEPD_YELLOW);
 
-
     display.getTextBounds(date.c_str(), 0, 0, &tbx, &tby, &tbw, &tbh);
     x = ((display.width() - tbw) - 58);
     uint16_t y = 25 + tbh;
@@ -171,9 +163,8 @@ void calender_text(string raumname, string raumnummer, string date)
       }
       else 
       {
-        meeting_now = -1;   
+        meeting_now = -1;  
       }
-      
     }
 
     // // errechnet den nächsten Termin
@@ -200,11 +191,8 @@ void calender_text(string raumname, string raumnummer, string date)
         break;
       }else{
         meeting_past = -1;
-        
       }
     }
-    
-    
     
     if(meeting_past != -1)
     {
@@ -213,8 +201,9 @@ void calender_text(string raumname, string raumnummer, string date)
       u8g2Fonts.setFont(schrift_fuer_past_and_next);
       u8g2Fonts.println(v_Meetings[meeting_past].subject.c_str());
       u8g2Fonts.setFont(schrift_fuer_past_and_next);
-      u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_past].start_timestamp).c_str(),get_formated_time(v_Meetings[meeting_past].end_timestamp).c_str(), v_Meetings[meeting_past].organizer_name.c_str());
-
+      u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_past].start_timestamp)
+                      .c_str(),get_formated_time(v_Meetings[meeting_past].end_timestamp)
+                      .c_str(), v_Meetings[meeting_past].organizer_name.c_str());
     }
     else{
       u8g2Fonts.setFont(schrift_fuer_past_and_next);
@@ -227,16 +216,16 @@ void calender_text(string raumname, string raumnummer, string date)
       u8g2Fonts.setCursor(0,200);
       u8g2Fonts.setFont(schrift_fuer_now);
       u8g2Fonts.printf("Free");
-
     }
-    
 
     if(meeting_now != -1)
     {
       u8g2Fonts.setCursor(0,200);
       u8g2Fonts.setFont(schrift_fuer_now);
       u8g2Fonts.println(v_Meetings[meeting_now].subject.c_str());
-      u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_now].start_timestamp).c_str(),get_formated_time(v_Meetings[meeting_now].end_timestamp).c_str(), v_Meetings[meeting_now].organizer_name.c_str());
+      u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_now]
+                      .start_timestamp).c_str(),get_formated_time(v_Meetings[meeting_now].end_timestamp)
+                      .c_str(), v_Meetings[meeting_now].organizer_name.c_str());
       u8g2Fonts.setCursor(0,200);
     }
 
@@ -245,8 +234,9 @@ void calender_text(string raumname, string raumnummer, string date)
       u8g2Fonts.setCursor(0,310);
       u8g2Fonts.setFont(schrift_fuer_past_and_next);
       u8g2Fonts.println(v_Meetings[meeting_next].subject.c_str());
-      u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_next].start_timestamp).c_str(),get_formated_time(v_Meetings[meeting_next].end_timestamp).c_str(), v_Meetings[meeting_next].organizer_name.c_str());
-      
+      u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_next].start_timestamp)
+                      .c_str(),get_formated_time(v_Meetings[meeting_next]
+                      .end_timestamp).c_str(), v_Meetings[meeting_next].organizer_name.c_str());
     }
     else
     {
@@ -254,24 +244,17 @@ void calender_text(string raumname, string raumnummer, string date)
       u8g2Fonts.setFont(schrift_fuer_past_and_next);
       u8g2Fonts.setCursor(0,310);
       u8g2Fonts.printf("-------");
-
     }
-    
-
   }
   while (display.nextPage());
-
   
   display.powerOff();
 }
 
-/*
- * Funktion um Time Stamp in zeit im Format: 11:00 - 11:15 zu konvertieren 
- * 
- */
+//Funktion um Time Stamp in zeit im Format: 11:00 - 11:15 zu konvertieren 
+ 
 string get_formated_time(time_t timestamp)
 {
-    
     auto tm = *std::localtime(&timestamp);
     std::ostringstream s; 
     s << put_time(&tm, "%R");
