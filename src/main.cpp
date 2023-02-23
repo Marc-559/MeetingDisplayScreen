@@ -14,44 +14,46 @@
 #include "time.h"
 #include <iostream>
 #include <string>
-#include <ArduinoHttpClient.h>
-#include <iostream>
-// #include <curl/curl.h>
-// #include <jsoncpp/json/json.h>
+#include <WiFiClientSecure.h>
+#include <HTTPClient.h>
 
-/* SSID and password of your WiFi net ----------------------------------------*/
-const char *ssid = "H@cka1r0n"; //"your ssid";
-const char *password = "!H@cka1h0n!";   //"your password";
 
-//deep sleep defines
+
+const char *ssid = "H@cka1r0n"; // "your ssid";
+const char *password = "!H@cka1h0n!";   // "your password";
+
+// deep sleep defines
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
 #define TIME_TO_SLEEP  60 // 1 minute(n)        /* Time ESP32 will go to sleep (in seconds) */
 
-//Raum defines
+// Raum defines
 #define Raumname "Java"
 #define Raumnummer "D2/16"
 
-IPAddress myIP;        // IP address in your local wifi net
+// IP address in your local wifi net
+IPAddress myIP;        
 
 Meeting_struct x;
 
 void setup() {
   Serial.begin(115200);
 
-  // Applying SSID and password
+   // Applying SSID and password
    WiFi.begin(ssid, password);
 
    // Waiting the connection to a router
-   while (WiFi.status() != WL_CONNECTED) {
+   while (WiFi.status() != WL_CONNECTED) 
+   {
        delay(500);
        Serial.print(".");
    }
   Serial.println(myIP = WiFi.localIP());
  
- Serial.println(WiFi.dnsIP()); 
+  Serial.println(WiFi.dnsIP()); 
+  
 
- // mqtt_setup();
- // mqtt_connect();
+  // mqtt_setup();
+  // mqtt_connect();
 
   epaper_setup();
   time_main();
@@ -66,41 +68,79 @@ void setup() {
   v_Meetings.emplace_back(x);
 }
 
+// Is getting Json from attached URL
 void getJson() 
 {
-  vector<Meeting_struct> v_Meetings;
-  Meeting_struct weather;
+   vector<Meeting_struct> v_Token;
+   Meeting_struct token;
 
-  WiFiClient wifi;
-  HttpClient client = HttpClient(wifi, "api.openweathermap.org", 80);
+ 
 
-  //client.beginRequest();
-  
-  std::cout << ">>>>>>>>>>>>>>>>" << client.get("/data/2.5/weather?q=London,uk&APPID=72bf310c823f2e48cb85ef2294b583cc") << "\n"; // data/2.5/weather?q=London,uk&APPID=72bf310c823f2e48cb85ef2294b583ccl") 
-  //client.endRequest();
+   
 
-  std::cout << ">>>>>>>>>>>>>>>>" << client.responseStatusCode() << "\n";
-  String payload = client.responseBody();
+const char* fingerprint = \
+"-----BEGIN CERTIFICATE-----\n" \
+"MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh\n" \
+"MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\n" \
+"d3cuZGlnaWNlcnQuY29tMSAwHgYDVQQDExdEaWdpQ2VydCBHbG9iYWwgUm9vdCBD\n" \
+"QTAeFw0wNjExMTAwMDAwMDBaFw0zMTExMTAwMDAwMDBaMGExCzAJBgNVBAYTAlVT\n" \
+"MRUwEwYDVQQKEwxEaWdpQ2VydCBJbmMxGTAXBgNVBAsTEHd3dy5kaWdpY2VydC5j\n" \
+"b20xIDAeBgNVBAMTF0RpZ2lDZXJ0IEdsb2JhbCBSb290IENBMIIBIjANBgkqhkiG\n" \
+"9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4jvhEXLeqKTTo1eqUKKPC3eQyaKl7hLOllsB\n" \
+"CSDMAZOnTjC3U/dDxGkAV53ijSLdhwZAAIEJzs4bg7/fzTtxRuLWZscFs3YnFo97\n" \
+"nh6Vfe63SKMI2tavegw5BmV/Sl0fvBf4q77uKNd0f3p4mVmFaG5cIzJLv07A6Fpt\n" \
+"43C/dxC//AH2hdmoRBBYMql1GNXRor5H4idq9Joz+EkIYIvUX7Q6hL+hqkpMfT7P\n" \
+"T19sdl6gSzeRntwi5m3OFBqOasv+zbMUZBfHWymeMr/y7vrTC0LUq7dBMtoM1O/4\n" \
+"gdW7jVg/tRvoSSiicNoxBN33shbyTApOB6jtSj1etX+jkMOvJwIDAQABo2MwYTAO\n" \
+"BgNVHQ8BAf8EBAMCAYYwDwYDVR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUA95QNVbR\n" \
+"TLtm8KPiGxvDl7I90VUwHwYDVR0jBBgwFoAUA95QNVbRTLtm8KPiGxvDl7I90VUw\n" \
+"DQYJKoZIhvcNAQEFBQADggEBAMucN6pIExIK+t1EnE9SsPTfrgT1eXkIoyQY/Esr\n" \
+"hMAtudXH/vTBH1jLuG2cenTnmCmrEbXjcKChzUyImZOMkXDiqw8cvpOp/2PV5Adg\n" \
+"06O/nVsJ8dWO41P0jmP6P6fbtGbfYmbW0W5BjfIttep3Sp+dWOIrWcBAI+0tKIJF\n" \
+"PnlUkiaY4IBIqDfv8NZ5YBberOgOzW6sRBc4L0na4UU+Krk2U886UAb3LujEV0ls\n" \
+"YSEY1QSteDwsOoBrp+uvFRTp2InBuThs4pFsiv9kuXclVzDAGySj4dzp30d8tbQk\n" \
+"CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=\n" \
+"-----END CERTIFICATE-----\n";
+
+WiFiClientSecure wifi;
+const char* address = "login.micrososftonline.com";
+int port = 443;
+HTTPClient client;
+client.begin(wifi, "https://login.microsoftonline.com/e3bace4d-d2e7-4d8f-afb8-152509ee3f1a/oauth2/v2.0/token");
+client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
+wifi.setCACert(fingerprint);
+
+wifi.setInsecure();
+
+String contentType = "application/x-www-form-urlencoded";
+String postData = "client_id=e29d3f70-8b7b-43a9-a2a2-ce5f0d7fdfef&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default&client_secret=2S78Q~a4Kq~DswvIVfk6i_m3BvDL4cRWh1qq3deN&grant_type=client_credentials";
+
+//std::cout << ">>>>>>>>>>>>>>>>: " << client.get("/common/oauth2/v2.0/token") << "\n";
+
+int statusCode = client.POST(postData);
+String response = client.getString();
+
+std::cout << "Status Code: " <<  "\n";
+std::cout << "statusCode: " << statusCode << "\n";
+std::cout << "ResponseHeader: " << "\n";
+Serial.println(">>>>>>>");
+Serial.println(response);
+
+std::cout << "response: " << response << "\n";
 
   JSON_Value *root_value;
-  JSON_Object *root_object;
+   JSON_Object *root_object;
 
-  JSON_Array *weather_array;
-  JSON_Object *weather_object;
-  size_t i;
+   JSON_Array *token_array;
+   JSON_Object *token_object;
+   size_t i;
+   String payload;
 
-  root_value = json_parse_string(payload.c_str());
-  root_object = json_value_get_object(root_value);
+  token_array = json_value_get_array(root_value);
+   root_value = json_parse_string(response.c_str());
 
-  weather_array = json_object_get_array(root_object, "weather");
 
-  for(i = 0; i < json_array_get_count(weather_array); i++) {
-      weather_object = json_array_get_object(weather_array, i);
-      weather.subject = string(json_object_get_string(weather_object, "description"));
-      //v_Meetings.emplace_back(weather);
-      
-      std::cout << "#############jsonData############ : " << weather.subject << "\n";
-    }
+       std::cout << ">>>>>>>>>>>>>>>>>Json: " << root_value << "\n";
 }
 
 void loop() 
@@ -128,12 +168,7 @@ void loop()
   calender_text(Raumname, Raumnummer, date);
   
   
-  std::cout << "START DEEP SLEEP######################### : " << "\n";
-  //deep sleep 
-   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-   esp_deep_sleep_start();
-
-   std::cout << "END DEEP SLEEP######################### : " << "\n";
+  // deep sleep 
+  // esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  // esp_deep_sleep_start();
 }
-
-    
