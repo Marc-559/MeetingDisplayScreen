@@ -15,6 +15,7 @@
 #include <iostream>
 #include <string>
 #include <ArduinoHttpClient.h>
+#include <iostream>
 // #include <curl/curl.h>
 // #include <jsoncpp/json/json.h>
 
@@ -24,7 +25,7 @@ const char *password = "!H@cka1h0n!";   //"your password";
 
 //deep sleep defines
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  600 // 5 minuten        /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP  60 // 1 minute(n)        /* Time ESP32 will go to sleep (in seconds) */
 
 //Raum defines
 #define Raumname "Java"
@@ -54,7 +55,9 @@ void setup() {
 
   epaper_setup();
   time_main();
-   
+
+
+
   x.organizer_name = "Jamo";
   x.subject = "M100 Implementation";
   x.start_timestamp = 1676269565;
@@ -95,6 +98,7 @@ void getJson()
       weather_object = json_array_get_object(weather_array, i);
       weather.subject = string(json_object_get_string(weather_object, "description"));
       //v_Meetings.emplace_back(weather);
+      
       std::cout << "#############jsonData############ : " << weather.subject << "\n";
     }
 }
@@ -123,9 +127,13 @@ void loop()
   
   calender_text(Raumname, Raumnummer, date);
   
-  delay(30000);
   
+  std::cout << "START DEEP SLEEP######################### : " << "\n";
   //deep sleep 
-  // esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-  // esp_deep_sleep_start();
+   esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+   esp_deep_sleep_start();
+
+   std::cout << "END DEEP SLEEP######################### : " << "\n";
 }
+
+    
