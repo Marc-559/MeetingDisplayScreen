@@ -77,10 +77,6 @@ void getJson()
    vector<Meeting_struct> v_Token;
    Meeting_struct token;
 
- 
-
-    
-
     const char* fingerprint = \
     "-----BEGIN CERTIFICATE-----\n" \
     "MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh\n" \
@@ -125,17 +121,17 @@ void getJson()
 
    
     //std::cout << "statusCode: " << statusCode << "\n";
-  
-        
 
     string tempString = jsonObject.substring(79).c_str();
     string jsonToken = tempString.substr(0, tempString.size() - 2);
- std::cout << "<<<<<<<<<TOKEN>>>>>>>>>>" << "\n\n";
-   std::cout << jsonToken << "\n";
-    
+    std::cout << "<<<<<<<<<TOKEN>>>>>>>>>>" << "\n\n";
+    std::cout << jsonToken << "\n";
    
-    
-
+   client.begin("https://graph.microsoft.com/v1.0/Marc.SAHLER@bachmann.info/calendars");
+   statusCode = client.GET();
+   
+   std::cout << "######################" << "\n";
+   std::cout << "statusCode: " << statusCode << "\n";
 }
 
 void loop() 
