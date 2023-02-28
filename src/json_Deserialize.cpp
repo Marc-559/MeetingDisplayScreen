@@ -30,7 +30,7 @@ void json_Deserialize(string payload)
         meeting.end_timestamp = json_object_get_number(meeting_object, "end_stamp");
         v_Meetings.emplace_back(meeting);
         
-        
+        std::cout << meeting.subject << "\n" ; 
     }
    
 }

@@ -5,7 +5,9 @@
 static void obtain_time(void);
 static void initialize_sntp(void);
 
-const char* ntpServer = "10.10.10.32";
+const char* ntpServer1 = "10.10.10.32";
+const char* ntpServer2 = "217.13.75.19";
+const char* ntpServer3 = "217.13.75.16";
 const long  gmtOffset_sec = 0;
 const int   daylightOffset_sec = 3600;
 
@@ -27,7 +29,7 @@ void time_sync_notification_cb(struct timeval *tv)
 void time_main(void)
 {
 
-    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
+    configTime(gmtOffset_sec, daylightOffset_sec, ntpServer1, ntpServer2, ntpServer3);
 
 //     time_t now;
 //     struct tm timeinfo;
