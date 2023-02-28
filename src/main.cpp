@@ -36,6 +36,7 @@ vector <string> strings;
 Meeting_struct x;
 
 void setup() {
+
   Serial.begin(115200);
 
    // Applying SSID and password
@@ -58,8 +59,6 @@ void setup() {
   epaper_setup();
   time_main();
 
-
-
   x.organizer_name = "Jamo";
   x.subject = "M100 Implementation";
   x.start_timestamp = 1676269565;
@@ -68,7 +67,21 @@ void setup() {
   v_Meetings.emplace_back(x);
 }
 
+void parseJsonValue(String payload)
+{
+    JSON_Value *root_value;
+    JSON_Array *meeting_array;
+    JSON_Object *meeting_object;
+    
+    root_value = json_parse_string(payload.c_str());
 
+    meeting_array = json_value_get_array(root_value);
+    
+    for (size_t i = 0; i < json_array_get_count(meeting_array); i++)
+    {
+      std::cout << meeting_array << "###################" << "\n" ; 
+    }
+}
 
 
 // Is getting Json from attached URL
@@ -127,11 +140,23 @@ void getJson()
     std::cout << "<<<<<<<<<TOKEN>>>>>>>>>>" << "\n\n";
     std::cout << jsonToken << "\n";
    
-   client.begin("https://graph.microsoft.com/v1.0/Marc.SAHLER@bachmann.info/calendars");
-   statusCode = client.GET();
-   
-   std::cout << "######################" << "\n";
-   std::cout << "statusCode: " << statusCode << "\n";
+    client.begin(wifi, "https://graph.microsoft.com/v1.0/users/marc.sahler@bachmann.info/calendar/getSchedule");
+
+  
+
+
+    client.addHeader("Authorization", ("Bearer " + jsonToken).c_str());
+    client.addHeader("Content-Type", "application/json");
+    client.addHeader("Prefer", "outlook.timezone=\"Pacific Standard Time\"");
+    int statuscode = client.POST("{\"schedules\": [\"_bzd2-16.hawaii@bachmann.info\"], \"startTime\": { \"dateTime\": \"2023-02-22T09:00:00\", \"timeZone\": \"Pacific Standard Time\" },\"endTime\": { \"dateTime\": \"2023-02-23T18:00:00\", \"timeZone\": \"Pacific Standard Time\"  }, \"availabilityViewInterval\": 60}");
+    String requestValue = client.getString();
+    std::cout << "######################" << "\n";
+    std::cout << "statusCode: " << statuscode << "\n";
+    std::cout << "requestValue: " << requestValue.c_str() << "\n";
+
+ 
+
+    parseJsonValue(requestValue.c_str());
 }
 
 void loop() 
