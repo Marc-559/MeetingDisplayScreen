@@ -1,4 +1,9 @@
-#include <string.h>
+#ifndef __h_alberto_time
+#define __h_alberto_time
+
+using namespace std;
+
+#include <string>
 #include <time.h>
 #include <sys/time.h>
 #include "freertos/FreeRTOS.h"
@@ -20,3 +25,6 @@ extern time_t now;
 extern struct tm timeinfo;
 
 void time_main(void);
+string getTime(void);
+
+#endif

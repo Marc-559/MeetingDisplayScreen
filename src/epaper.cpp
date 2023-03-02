@@ -141,6 +141,7 @@ void calender_text(string raumname, string raumnummer, string date)
     /// Gelber Balken
     display.drawRect(0,40,display.width(),15,GxEPD_YELLOW);
     display.fillRect(0,40,display.width(),15,GxEPD_YELLOW);
+ 
 
     display.getTextBounds(date.c_str(), 0, 0, &tbx, &tby, &tbw, &tbh);
     x = ((display.width() - tbw) - 58);
