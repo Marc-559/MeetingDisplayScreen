@@ -19,4 +19,5 @@ struct Meeting_struct
 
 extern vector<Meeting_struct> v_Meetings;
 
+void json_Deserialize(string payload);
 void json_DeserializeMeetingRoom(string payload);

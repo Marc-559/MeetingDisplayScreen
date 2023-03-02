@@ -128,10 +128,13 @@ void getJson()
   
 
 
+  std::cout << "*******************************" << "\n";
+  std::cout << getTime() << "\n"; 
+
   client.addHeader("Authorization", ("Bearer " + jsonToken).c_str());
   client.addHeader("Content-Type", "application/json");
-  client.addHeader("Prefer", "outlook.timezone=\"Pacific Standard Time\"");
-  int statuscode = client.POST("{\"schedules\": [\"_bzd2-16.hawaii@bachmann.info\"], \"startTime\": { \"dateTime\": \"2023-02-22T09:00:00\", \"timeZone\": \"Pacific Standard Time\" },\"endTime\": { \"dateTime\": \"2023-02-23T18:00:00\", \"timeZone\": \"Pacific Standard Time\"  }, \"availabilityViewInterval\": 60}");
+  client.addHeader("Prefer", "outlook.timezone=\"Europe/Berlin\"");
+  int statuscode = client.POST(("{\"schedules\": [\"_bzd2-16.hawaii@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + getTime() + "T07:30:00\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + getTime() + "T20:00:00\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 60}").c_str());
   String requestValue = client.getString();
     
   json_DeserializeMeetingRoom(requestValue.c_str());
@@ -154,14 +157,9 @@ void loop()
     std::cout << "    " << "Sensitivity: " << v_Meetings[i].sensitivity << "\n";
   }
   
-  time_t t = std::time(nullptr);
-  auto tm = *std::localtime(&t);
-  std::ostringstream s; 
-  s << put_time(&tm, "%d.%m.%Y");
-  string date = s.str();
   
-  calender_text(Raumname, Raumnummer, date);
-  
+
+  calender_text(Raumname, Raumnummer, getTime());
   
   // deep sleep 
   // esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
