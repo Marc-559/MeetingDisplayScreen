@@ -12,11 +12,12 @@ struct Meeting_struct
 {
     string subject;
     string organizer_name;
-    string sensitivity;  
+    string sensitivity;
+    string location;  
     long start_timestamp;
     long end_timestamp;
 };
 
 extern vector<Meeting_struct> v_Meetings;
-
+void json_Deserialize(string payload);
 void json_DeserializeMeetingRoom(string payload);

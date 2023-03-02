@@ -170,7 +170,7 @@ String NTPClient::getFormattedTime(unsigned long secs) {
 using namespace std;
 // Based on https://github.com/PaulStoffregen/Time/blob/master/Time.cpp
 // currently assumes UTC timezone, instead of using this->_timeOffset
-string NTPClient::getFormattedDate(unsigned long secs) {
+String NTPClient::getFormattedDate(unsigned long secs) {
   unsigned long rawTime = (secs ? secs : this->getEpochTime()) / 86400L;  // in days
   unsigned long days = 0, year = 1970;
   uint8_t month;
@@ -190,10 +190,10 @@ string NTPClient::getFormattedDate(unsigned long secs) {
     if (rawTime < monthLength) break;
     rawTime -= monthLength;
   }
-  string monthStr = ++month < 10 ? "0" + (month) : string(month); // jan is month 1  
-  string dayStr = ++rawTime < 10 ? "0" + string(rawTime) : string(rawTime); // day of month  
+  String monthStr = ++month < 10 ? "0" + (month) : String(month); // jan is month 1  
+  String dayStr = ++rawTime < 10 ? "0" + String(rawTime) : String(rawTime); // day of month  
   
-  return string(year) + "-" + monthStr + "-" + dayStr + "T" + this->getFormattedTime(secs ? secs : 0) + "Z";
+  return String(year) + "-" + monthStr + "-" + dayStr + "T" + this->getFormattedTime(secs ? secs : 0) + "Z";
 }
 
 void NTPClient::end() {
