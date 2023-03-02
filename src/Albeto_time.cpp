@@ -16,7 +16,7 @@ static void initialize_sntp(void);
 const char* ntpServer1 = "10.10.10.32";
 const char* ntpServer2 = "217.13.75.19";
 const char* ntpServer3 = "217.13.75.16";
-const long  gmtOffset_sec = 0;
+const long  gmtOffset_sec = 3600;
 const int   daylightOffset_sec = 3600;
 
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_CUSTOM

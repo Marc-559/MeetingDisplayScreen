@@ -4,9 +4,19 @@
 #include <iostream>
 #include <cstring>
 #include <epaper.hpp>
+#include <ctime>
+#include <iomanip>
 
 vector<Meeting_struct> v_Meetings;
 
+
+time_t getGraphTimeAsTimestamp(String datetime) 
+{
+  tm tm;   
+  strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S.%f", &tm);
+
+  return mktime(&tm) + 60 * 60;
+}
 
 void json_DeserializeMeetingRoom(string payload)
 {
@@ -29,14 +39,25 @@ void json_DeserializeMeetingRoom(string payload)
       {
         json_object = json_array_get_object(json_array, i);
         jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));
+        jsonMeetingValue.location = string(json_object_get_string(json_object, "location"));
+        
+        JSON_Object *tempObject = json_object;
+        
 
-        //v_Meetings.emplace_back(weather);
-        std::cout << "#############jsonData############ : " << jsonMeetingValue.subject << "\n";
-       
+        tempObject = (json_object_get_object(json_object, "start"));
+        jsonMeetingValue.start_timestamp = getGraphTimeAsTimestamp(json_object_get_string(tempObject, "dateTime"));
 
+        json_object = (json_object_get_object(json_object, "end"));
+        jsonMeetingValue.end_timestamp = getGraphTimeAsTimestamp(json_object_get_string(json_object, "dateTime"));
+ 
+        
+        std::cout << "jsonData -> subject : " << jsonMeetingValue.subject << "\n";
+        std::cout << "jsonData -> location : " << jsonMeetingValue.location << "\n";
+        std::cout << "jsonData -> start_timestamp : " << jsonMeetingValue.start_timestamp<< "\n";
+        std::cout << "jsonData -> end_timestamp : " << jsonMeetingValue.end_timestamp<< "\n";
+        v_Meetings.emplace_back(jsonMeetingValue);
       }
     }
-
 }
 
 void json_DeserializeUser(string payload)
@@ -66,21 +87,21 @@ void json_DeserializeUser(string payload)
     }
 }
 
+ 
+
  void json_Deserialize(string payload)
-  {
+ {
      JSON_Value *root_value;
      JSON_Array *meeting_array;
      JSON_Object *meeting_object;
      size_t i;
 
-    root_value = json_parse_string(payload.c_str());
-     if (json_value_get_type(root_value) != JSONArray) {
-        
-     }
-    
+     root_value = json_parse_string(payload.c_str());
      meeting_array = json_value_get_array(root_value);
-    Meeting_struct meeting ;
-    for (i = 0; i < json_array_get_count(meeting_array); i++) {
+    
+     Meeting_struct meeting ;
+     for (i = 0; i < json_array_get_count(meeting_array); i++) 
+     {
         meeting_object = json_array_get_object(meeting_array, i);
         meeting.subject = string(json_object_get_string(meeting_object, "subject"));
         meeting.organizer_name =  string(json_object_get_string(meeting_object, "organizer_name")); 
@@ -91,6 +112,5 @@ void json_DeserializeUser(string payload)
         
         std::cout << meeting.subject << "\n" ; 
     }
-   
-}
-
+ }
+  
