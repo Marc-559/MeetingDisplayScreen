@@ -15,7 +15,7 @@ time_t getGraphTimeAsTimestamp(String datetime)
   tm tm;   
   strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S.%f", &tm);
 
-  return mktime(&tm) + 60 * 60;
+  return mktime(&tm); //+ 60 * 60;
 }
 
 void json_DeserializeMeetingRoom(string payload)
