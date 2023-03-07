@@ -4,6 +4,7 @@
 #include <string>
 #include <string.h>
 #include <cstring>
+#include <HTTPClient.h>
 
 using namespace std;
 
@@ -19,9 +20,5 @@ struct Meeting_struct
 };
 
 extern vector<Meeting_struct> v_Meetings;
-<<<<<<< HEAD
-
-=======
->>>>>>> 4b581fa7e3d9522864e3888653c1d812e42242d1
-void json_Deserialize(string payload);
-void json_DeserializeMeetingRoom(string payload);
+void json_DeserializeMeetingRoom(string payload, string token, WiFiClientSecure wifi);
+void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue);

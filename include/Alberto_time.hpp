@@ -18,9 +18,6 @@ using namespace std;
 #include "esp_sntp.h"
 
 
-
-
-
 extern time_t now;
 extern struct tm timeinfo;
 

@@ -1,14 +1,18 @@
 #include "json_Deserialize.hpp"
-
+#include <WiFi.h>
 #include <stdio.h>
 #include <iostream>
 #include <cstring>
 #include <epaper.hpp>
+#include <Alberto_time.hpp>
 #include <ctime>
 #include <iomanip>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
 
 vector<Meeting_struct> v_Meetings;
 
+static HTTPClient client;
 
 time_t getGraphTimeAsTimestamp(String datetime) 
 {
@@ -18,99 +22,122 @@ time_t getGraphTimeAsTimestamp(String datetime)
   return mktime(&tm) + 60 * 60;
 }
 
-void json_DeserializeMeetingRoom(string payload)
-{
-    JSON_Value *root_value;
-    JSON_Array *json_array;
-    JSON_Object *json_object;
-    Meeting_struct jsonMeetingValue;
-    
-    root_value = json_parse_string(payload.c_str());
-    json_object = json_value_get_object(root_value); // json object = full json
-    json_array = json_object_get_array(json_object, "value"); //json array = value array
+ void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue)
+{ 
+  JSON_Value *root_value;
+  JSON_Array *json_array;
+  JSON_Object *json_object;
 
+  root_value = json_parse_string(payload.c_str());
+  
+  //std::cout << "PAYLOAD USER: " << payload.c_str() << "\n";
 
-    for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes value array 
-    {
-      json_object = json_array_get_object(json_array, i); //json object = value array (value) 
-      json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
+  json_object = json_value_get_object(root_value); // json object = full json
+  json_array = json_object_get_array(json_object, "value"); //json array = value array
 
-      for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
-      {
-        json_object = json_array_get_object(json_array, i);
-        jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));
-        jsonMeetingValue.location = string(json_object_get_string(json_object, "location"));
-        
-        JSON_Object *tempObject = json_object;
-        
+  json_object = json_array_get_object(json_array, 0); //json object = value array (value) 
+  json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
 
-        tempObject = (json_object_get_object(json_object, "start"));
-        jsonMeetingValue.start_timestamp = getGraphTimeAsTimestamp(json_object_get_string(tempObject, "dateTime"));
+  for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
+  {
+    json_object = json_array_get_object(json_array, i);
 
-        json_object = (json_object_get_object(json_object, "end"));
-        jsonMeetingValue.end_timestamp = getGraphTimeAsTimestamp(json_object_get_string(json_object, "dateTime"));
- 
-        
+    if (!string(json_object_get_string(json_object, "location")).compare( jsonMeetingValue.location))
+    {   
+      jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));          
         std::cout << "jsonData -> subject : " << jsonMeetingValue.subject << "\n";
         std::cout << "jsonData -> location : " << jsonMeetingValue.location << "\n";
-        std::cout << "jsonData -> start_timestamp : " << jsonMeetingValue.start_timestamp<< "\n";
-        std::cout << "jsonData -> end_timestamp : " << jsonMeetingValue.end_timestamp<< "\n";
-        v_Meetings.emplace_back(jsonMeetingValue);
-      }
-    }
+
+    }          
+  }
+  json_value_free(root_value);
 }
 
-void json_DeserializeUser(string payload)
+
+
+void doPost(Meeting_struct jsonMeetingValue, string token, WiFiClientSecure wifi, string startTime, string endTime)
 {
-    JSON_Value *root_value;
-    JSON_Array *json_array;
-    JSON_Object *json_object;
-    Meeting_struct jsonUserValue;
-    
-    root_value = json_parse_string(payload.c_str());
-    json_object = json_value_get_object(root_value); // json object = full json
-    json_array = json_object_get_array(json_object, "value"); //json array = value array
+  
+  
 
 
-    for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes value array 
-    {
-      json_object = json_array_get_object(json_array, i); //json object = value array (value) 
-      json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
+  client.begin(wifi, "https://graph.microsoft.com/v1.0/users/marc.sahler@bachmann.info/calendar/getSchedule");
 
-      for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
-      {
-        json_object = json_array_get_object(json_array, i);
-        jsonUserValue.subject = string(json_object_get_string(json_object, "subject"));
+  client.addHeader("Authorization", ("Bearer " + token).c_str()); 
+  client.addHeader("Content-Type", "application/json");
+  client.addHeader("Prefer", "outlook.timezone=\"Europe/Berlin\"");  
 
-        std::cout << "#############jsonData############ : " << jsonUserValue.subject << "\n";
-      }
-    }
+  startTime = startTime.substr(0, startTime.size() - 8);
+  endTime = endTime.substr(0, endTime.size() - 8);
+  jsonMeetingValue.subject = jsonMeetingValue.subject.substr(0, jsonMeetingValue.subject.size() - 1);
+
+  std::cout << "NAME" << jsonMeetingValue.subject << "\n";
+  std::cout << "STARTTIME" << startTime <<"\n";
+  std::cout << "ENDTIME" << endTime <<"\n";
+  std::cout << "CONNECTION STATUS" << client.connected() <<"\n";
+  
+  std::cout << "Before POST" << "\n";
+
+
+  client.POST(("{\"schedules\": [\"" + jsonMeetingValue.subject + "@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + startTime +"\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + endTime +"\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 5}").c_str());
+  std::cout << "AFTER POST" << "\n";    
+
+  json_DeserializeUser(client.getString().c_str(), jsonMeetingValue);
+  client.end(); 
+  
+
+
 }
 
- 
+void json_DeserializeMeetingRoom(string payload, string token, WiFiClientSecure wifi)
+{
+  JSON_Value *root_value;
+  JSON_Array *json_array;
+  JSON_Object *json_object;
+  Meeting_struct jsonMeetingValue;
+  String startTime;
+  String endTime;
 
- void json_Deserialize(string payload)
- {
-     JSON_Value *root_value;
-     JSON_Array *meeting_array;
-     JSON_Object *meeting_object;
-     size_t i;
+  root_value = json_parse_string(payload.c_str());
+  json_object = json_value_get_object(root_value);// json object = full json
+  json_array = json_object_get_array(json_object, "value"); //json array = value array
 
-     root_value = json_parse_string(payload.c_str());
-     meeting_array = json_value_get_array(root_value);
-    
-     Meeting_struct meeting ;
-     for (i = 0; i < json_array_get_count(meeting_array); i++) 
-     {
-        meeting_object = json_array_get_object(meeting_array, i);
-        meeting.subject = string(json_object_get_string(meeting_object, "subject"));
-        meeting.organizer_name =  string(json_object_get_string(meeting_object, "organizer_name")); 
-        meeting.sensitivity = string(json_object_get_string(meeting_object, "sensitivity"));
-        meeting.start_timestamp = json_object_get_number(meeting_object, "start_stamp");
-        meeting.end_timestamp = json_object_get_number(meeting_object, "end_stamp");
-        v_Meetings.emplace_back(meeting);
+
+  json_object = json_array_get_object(json_array, 0); //json object = value array (value) 
+  json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
+
+  JSON_Object *tempObject;
+  client.setReuse(true);
+  for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
+  {
+    json_object = json_array_get_object(json_array, i);
+    jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));
+    jsonMeetingValue.location = string(json_object_get_string(json_object, "location"));
         
-        std::cout << meeting.subject << "\n" ; 
+    tempObject = json_object;
+      
+    tempObject = (json_object_get_object(json_object, "start"));
+    startTime = json_object_get_string(tempObject, "dateTime");
+
+    jsonMeetingValue.start_timestamp = getGraphTimeAsTimestamp(startTime);
+
+    json_object = (json_object_get_object(json_object, "end"));
+    endTime = json_object_get_string(json_object, "dateTime");
+
+    jsonMeetingValue.end_timestamp = getGraphTimeAsTimestamp(endTime);
+
+    if (i == 2) {
+      client.begin(wifi, "https://www.google.com");
+      client.GET();  
+      client.end();
     }
- }
+    std::cout << "BEFORE DOPOST METHOD" << "\n";
+    doPost(jsonMeetingValue, token, wifi, startTime.c_str(), endTime.c_str());
+
+    v_Meetings.emplace_back(jsonMeetingValue);
+  }   
+  
+  json_value_free(root_value);
+
+}
   

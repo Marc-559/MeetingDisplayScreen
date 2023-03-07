@@ -2,13 +2,8 @@
 #include "time.h"
 #include <WiFi.h>
 #include <iostream>
-#include "Alberto_mqtt.hpp"
 #include <iomanip>
 #include <sstream>
-
-
-
-
 
 static void obtain_time(void);
 static void initialize_sntp(void);
