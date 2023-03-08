@@ -23,5 +23,6 @@ extern struct tm timeinfo;
 
 void time_main(void);
 string getTime(void);
+string getTimejson(void);
 
 #endif

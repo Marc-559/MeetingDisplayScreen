@@ -55,11 +55,66 @@ void setup() {
 
 }
 
+
+time_t getGraphTimeAsTimestamp(string datetime) 
+{
+  tm tm;   
+  strptime(datetime.c_str(), "%Y-%m-%dT%H:%M:%S.%f", &tm);
+
+  return mktime(&tm);// + 60 * 60;
+}
+
+
+ void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue)
+{ 
+  JSON_Value *root_value;
+  JSON_Array *json_array;
+  JSON_Object *json_object;
+
+  root_value = json_parse_string(payload.c_str());
+  
+  //std::cout << "PAYLOAD USER: " << payload.c_str() << "\n";
+
+  json_object = json_value_get_object(root_value); // json object = full json
+  json_array = json_object_get_array(json_object, "value"); //json array = value array
+
+  json_object = json_array_get_object(json_array, 0); //json object = value array (value) 
+  json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
+
+  for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
+  {
+    json_object = json_array_get_object(json_array, i);
+
+    if (!string(json_object_get_string(json_object, "location")).compare( jsonMeetingValue.location))
+    {   
+      jsonMeetingValue.organizer_name = jsonMeetingValue.subject;
+
+      jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));   
+    
+      //std::cout << "jsonData -> subject : " << jsonMeetingValue.subject << "\n"; 
+      //std::cout << "jsonData -> location : " << jsonMeetingValue.location << "\n";
+      
+      v_Meetings.emplace_back(jsonMeetingValue);
+
+    }          
+  }
+  json_value_free(root_value);
+}
+
+
 // Is getting Json from attached URL
 void getJson() 
 {
   vector<Meeting_struct> v_Token;
   Meeting_struct token;
+  JSON_Value *root_value;
+  JSON_Array *json_array;
+  JSON_Object *json_object;
+  Meeting_struct jsonObject;
+  string startTime;
+  string endTime;
+  WiFiClientSecure wifi;
+  HTTPClient client;
 
   const char* fingerprint = \
   "-----BEGIN CERTIFICATE-----\n" \
@@ -85,8 +140,7 @@ void getJson()
   "CAUw7C29C79Fv1C5qfPrmAESrciIxpg0X40KPMbp1ZWVbd4=\n" \
   "-----END CERTIFICATE-----\n";
 
-  WiFiClientSecure wifi;
-  HTTPClient client;
+  
   client.begin(wifi, "https://login.microsoftonline.com/e3bace4d-d2e7-4d8f-afb8-152509ee3f1a/oauth2/v2.0/token");
   client.setFollowRedirects(HTTPC_STRICT_FOLLOW_REDIRECTS);
   wifi.setCACert(fingerprint);
@@ -100,8 +154,6 @@ void getJson()
 
   string tempString = client.getString().substring(79).c_str();
   string jsonToken = tempString.substr(0, tempString.size() - 2);
- 
-  client.end();
 
   client.begin(wifi, "https://graph.microsoft.com/v1.0/users/marc.sahler@bachmann.info/calendar/getSchedule");
 
@@ -110,10 +162,71 @@ void getJson()
   client.addHeader("Content-Type", "application/json");
   client.addHeader("Prefer", "outlook.timezone=\"Europe/Berlin\"");
     
-  client.POST(("{\"schedules\": [\"_bzd2-16.hawaii@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + getTime() + "T07:30:00\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + getTime() + "T20:00:00\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 60}").c_str());
-      
-  json_DeserializeMeetingRoom(client.getString().c_str(), jsonToken, wifi);
-  client.end();
+  std::cout << getTime() << "\n";
+
+  client.POST(("{\"schedules\": [\"_bzd2-16.hawaii@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + getTimejson() + "T07:30:00\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + getTimejson() + "T20:00:00\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 60}").c_str());
+  
+  string payload = client.getString().c_str();
+
+
+
+  //JSON DESIRIALIZE
+  root_value = json_parse_string(payload.c_str());
+  json_object = json_value_get_object(root_value);// json object = full json
+  json_array = json_object_get_array(json_object, "value"); //json array = value array
+
+
+  json_object = json_array_get_object(json_array, 0); //json object = value array (value) 
+  json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
+
+  JSON_Object *tempObject;
+  
+
+  for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
+  {
+    json_object = json_array_get_object(json_array, i);
+    jsonObject.subject = string(json_object_get_string(json_object, "subject"));
+    jsonObject.location = string(json_object_get_string(json_object, "location"));
+    
+
+    tempObject = json_object;
+        
+    tempObject = (json_object_get_object(json_object, "start"));
+    startTime = json_object_get_string(tempObject, "dateTime");
+
+    jsonObject.start_timestamp = getGraphTimeAsTimestamp(startTime);
+
+    json_object = (json_object_get_object(json_object, "end"));
+    endTime = json_object_get_string(json_object, "dateTime");
+
+    jsonObject.end_timestamp = getGraphTimeAsTimestamp(endTime);
+
+    //DO POST METHOD 
+
+    client.begin(wifi, "https://graph.microsoft.com/v1.0/users/marc.sahler@bachmann.info/calendar/getSchedule");
+
+    client.addHeader("Authorization", ("Bearer " + jsonToken).c_str()); 
+    client.addHeader("Content-Type", "application/json");
+    client.addHeader("Prefer", "outlook.timezone=\"Europe/Berlin\"");  
+
+    startTime = startTime.substr(0, startTime.size() - 8);
+    endTime = endTime.substr(0, endTime.size() - 8);
+    
+
+    // std::cout << "NAME: " << jsonObject.subject << "\n";
+    // std::cout << "STARTTIME: " << startTime <<"\n";
+    // std::cout << "ENDTIME: " << endTime <<"\n";  
+    // std::cout << "Before POST " << "\n";
+    
+    client.POST(("{\"schedules\": [\"" + jsonObject.subject.substr(0, jsonObject.subject.size() - 1) + "@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + startTime +"\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + endTime +"\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 5}").c_str());
+    
+    json_DeserializeUser(client.getString().c_str(), jsonObject);
+
+    v_Meetings.emplace_back(jsonObject);
+  }   
+  
+  json_value_free(root_value);
+ 
 }
 
 void loop() 
@@ -121,23 +234,23 @@ void loop()
  
   getJson();
   
-  for (size_t i = 0; i < v_Meetings.size(); i++)
-  {
-    std::cout << "Meeting " << i << ":\n";
-    std::cout << "    " << "Subject: " << v_Meetings[i].subject << "\n";
-    printf("    Start: %ld\n", v_Meetings[i].start_timestamp);
-    printf("    End: %ld\n", v_Meetings[i].end_timestamp);
-    std::cout << "    " << "Organizer_name: " << v_Meetings[i].organizer_name << "\n";
-    std::cout << "    " << "Sensitivity: " << v_Meetings[i].sensitivity << "\n";
-  }
+  // for (size_t i = 0; i < v_Meetings.size(); i++)
+  // {
+  //   std::cout << "Meeting " << i << ":\n";
+  //   std::cout << "    " << "Subject: " << v_Meetings[i].subject << "\n";
+  //   printf("    Start: %ld\n", v_Meetings[i].start_timestamp);
+  //   printf("    End: %ld\n", v_Meetings[i].end_timestamp);
+  //   std::cout << "    " << "Organizer_name: " << v_Meetings[i].organizer_name << "\n";
+  //   std::cout << "    " << "Sensitivity: " << v_Meetings[i].sensitivity << "\n";
+  // }
   
   
 
   calender_text(Raumname, Raumnummer, getTime());
   
   // deep sleep 
-  // esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
-  // esp_deep_sleep_start();
+  esp_sleep_enable_timer_wakeup(TIME_TO_SLEEP * uS_TO_S_FACTOR);
+  esp_deep_sleep_start();
 }
 
 

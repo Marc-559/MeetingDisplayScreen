@@ -12,7 +12,7 @@ const char* ntpServer1 = "10.10.10.32";
 const char* ntpServer2 = "217.13.75.19";
 const char* ntpServer3 = "217.13.75.16";
 const long  gmtOffset_sec = 3600;
-const int   daylightOffset_sec = 3600;
+const int   daylightOffset_sec = 0;
 
 #ifdef CONFIG_SNTP_TIME_SYNC_METHOD_CUSTOM
 void sntp_sync_time(struct timeval *tv)
@@ -52,12 +52,22 @@ static void initialize_sntp(void)
     sntp_init();
 }
 
-string getTime()
+string getTimejson()
 {
     time_t t = std::time(nullptr);
   auto tm = *std::localtime(&t);
   std::ostringstream s; 
   s << put_time(&tm, "%Y-%m-%d");
+  string date = s.str();
+  return date;
+}
+
+string getTime()
+{
+    time_t t = std::time(nullptr);
+  auto tm = *std::localtime(&t);
+  std::ostringstream s; 
+  s << put_time(&tm, "%d.%m.%Y");
   string date = s.str();
   return date;
 }

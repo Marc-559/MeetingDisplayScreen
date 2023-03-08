@@ -20,5 +20,4 @@ struct Meeting_struct
 };
 
 extern vector<Meeting_struct> v_Meetings;
-void json_DeserializeMeetingRoom(string payload, string token, WiFiClientSecure wifi);
-void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue);
+
