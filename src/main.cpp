@@ -23,7 +23,7 @@ const char *password = "!H@cka1h0n!";   // "your password";
 
 // deep sleep defines
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
-#define TIME_TO_SLEEP  60 // 1 minute(n)        /* Time ESP32 will go to sleep (in seconds) */
+#define TIME_TO_SLEEP  300 // 1 minute(n)        /* Time ESP32 will go to sleep (in seconds) */
 
 // Raum defines
 #define Raumname "Hawaii"
@@ -65,38 +65,65 @@ time_t getGraphTimeAsTimestamp(string datetime)
 }
 
 
- void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue)
+ void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue, string startTime)
 { 
   JSON_Value *root_value;
   JSON_Array *json_array;
   JSON_Object *json_object;
+  string jsonStartTime; 
+  string jsonName;
 
   root_value = json_parse_string(payload.c_str());
   
-  //std::cout << "PAYLOAD USER: " << payload.c_str() << "\n";
+  std::cout << "PAYLOAD USER: " << payload.c_str() << "\n";
 
   json_object = json_value_get_object(root_value); // json object = full json
   json_array = json_object_get_array(json_object, "value"); //json array = value array
 
   json_object = json_array_get_object(json_array, 0); //json object = value array (value) 
+
+  
+  jsonName = json_object_get_string(json_object, "scheduleId"); //Get name
+  jsonName = jsonName.substr(0, jsonName.size() - 14);
+
   json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
 
   for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
   {
     json_object = json_array_get_object(json_array, i);
-
-    if (!string(json_object_get_string(json_object, "location")).compare( jsonMeetingValue.location))
-    {   
-      jsonMeetingValue.organizer_name = jsonMeetingValue.subject;
-
-      jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));   
     
-      //std::cout << "jsonData -> subject : " << jsonMeetingValue.subject << "\n"; 
-      //std::cout << "jsonData -> location : " << jsonMeetingValue.location << "\n";
-      
-      v_Meetings.emplace_back(jsonMeetingValue);
 
-    }          
+    if (json_object_get_boolean(json_object, "isPrivate") == 1)
+    {
+      
+      json_object = (json_object_get_object(json_object, "start")); //Get Date
+      jsonStartTime = json_object_get_string(json_object, "dateTime");
+      jsonStartTime = jsonStartTime.substr(0, jsonStartTime.size() - 8);
+
+      if (jsonStartTime == startTime)
+      {
+        
+
+        jsonMeetingValue.organizer_name = jsonName;
+        jsonMeetingValue.subject = "Privater Termin";
+        
+        v_Meetings.emplace_back(jsonMeetingValue);
+      } 
+    }
+    else
+    {
+      if (!string(json_object_get_string(json_object, "location")).compare( jsonMeetingValue.location))
+      {   
+
+        jsonMeetingValue.organizer_name = jsonName;
+        jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));   
+
+        v_Meetings.emplace_back(jsonMeetingValue);
+      } 
+      
+    } 
+
+    
   }
   json_value_free(root_value);
 }
@@ -167,9 +194,7 @@ void getJson()
   client.POST(("{\"schedules\": [\"_bzd2-16.hawaii@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + getTimejson() + "T07:30:00\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + getTimejson() + "T20:00:00\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 60}").c_str());
   
   string payload = client.getString().c_str();
-
-
-
+  std::cout << "PAYLOAD MEETING: " <<  payload << "\n";
   //JSON DESIRIALIZE
   root_value = json_parse_string(payload.c_str());
   json_object = json_value_get_object(root_value);// json object = full json
@@ -213,16 +238,15 @@ void getJson()
     endTime = endTime.substr(0, endTime.size() - 8);
     
 
-    // std::cout << "NAME: " << jsonObject.subject << "\n";
-    // std::cout << "STARTTIME: " << startTime <<"\n";
-    // std::cout << "ENDTIME: " << endTime <<"\n";  
-    // std::cout << "Before POST " << "\n";
+    std::cout << "NAME: " << jsonObject.subject << "\n";
+    std::cout << "STARTTIME: " << startTime <<"\n";
+    std::cout << "ENDTIME: " << endTime <<"\n";
+    std::cout << "LOCATION: " << jsonObject.location <<"\n";  
+    std::cout << "Before POST " << "\n";
     
     client.POST(("{\"schedules\": [\"" + jsonObject.subject.substr(0, jsonObject.subject.size() - 1) + "@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + startTime +"\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + endTime +"\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 5}").c_str());
     
-    json_DeserializeUser(client.getString().c_str(), jsonObject);
-
-    v_Meetings.emplace_back(jsonObject);
+    json_DeserializeUser(client.getString().c_str(), jsonObject, startTime);
   }   
   
   json_value_free(root_value);
@@ -231,18 +255,20 @@ void getJson()
 
 void loop() 
 {
+
+  v_Meetings.clear();
  
   getJson();
   
-  // for (size_t i = 0; i < v_Meetings.size(); i++)
-  // {
-  //   std::cout << "Meeting " << i << ":\n";
-  //   std::cout << "    " << "Subject: " << v_Meetings[i].subject << "\n";
-  //   printf("    Start: %ld\n", v_Meetings[i].start_timestamp);
-  //   printf("    End: %ld\n", v_Meetings[i].end_timestamp);
-  //   std::cout << "    " << "Organizer_name: " << v_Meetings[i].organizer_name << "\n";
-  //   std::cout << "    " << "Sensitivity: " << v_Meetings[i].sensitivity << "\n";
-  // }
+  for (size_t i = 0; i < v_Meetings.size(); i++)
+  {
+    std::cout << "Meeting " << i << ":\n";
+    std::cout << "    " << "Subject: " << v_Meetings[i].subject << "\n";
+    printf("    Start: %ld\n", v_Meetings[i].start_timestamp);
+    printf("    End: %ld\n", v_Meetings[i].end_timestamp);
+    std::cout << "    " << "Organizer_name: " << v_Meetings[i].organizer_name << "\n";
+    std::cout << "    " << "Sensitivity: " << v_Meetings[i].sensitivity << "\n";
+  }
   
   
 
