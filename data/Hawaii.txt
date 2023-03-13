@@ -1,0 +1,7 @@
+{
+  "SSID": "H@cka1r0n",
+  "Password": "!H@cka1h0n!",
+  "RoomName": "Hawaii",
+  "RoomNumber": "D2/16",
+  "EmailAddress": "_bzd2-16.hawaii@bachmann.info"
+}
