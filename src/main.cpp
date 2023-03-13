@@ -184,8 +184,8 @@ void getJson()
   HTTPClient client;
 
   
-
-  const char* fingerprint = \
+// Hokus Pokus Verschwindibus
+  const char* fingerprint = \ 
   "-----BEGIN CERTIFICATE-----\n" \
   "MIIDrzCCApegAwIBAgIQCDvgVpBCRrGhdWrJWZHHSjANBgkqhkiG9w0BAQUFADBh\n" \
   "MQswCQYDVQQGEwJVUzEVMBMGA1UEChMMRGlnaUNlcnQgSW5jMRkwFwYDVQQLExB3\n" \
