@@ -201,7 +201,7 @@ void calender_text(string raumname, string raumnummer, string date)
       u8g2Fonts.setCursor(0,105);
       u8g2Fonts.setFont(schrift_fuer_past_and_next);
       u8g2Fonts.println(v_Meetings[meeting_past].subject.c_str());
-      u8g2Fonts.setFont(schrift_fuer_past_and_next);
+      //u8g2Fonts.setFont(schrift_fuer_past_and_next);
       u8g2Fonts.printf("%s - %s   %s", get_formated_time(v_Meetings[meeting_past].start_timestamp)
                       .c_str(),get_formated_time(v_Meetings[meeting_past].end_timestamp)
                       .c_str(), v_Meetings[meeting_past].organizer_name.c_str());

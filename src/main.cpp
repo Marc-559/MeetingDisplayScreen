@@ -24,7 +24,9 @@ const char *password;   // "your password";
 string roomEmail;
 // deep sleep defines
 #define uS_TO_S_FACTOR 1000000  /* Conversion factor for micro seconds to seconds */
+
 #define TIME_TO_SLEEP  30 // 1 minute(n)        /* Time ESP32 will go to sleep (in seconds) */
+
 
 // Raum defines
 string Raumname;
@@ -101,32 +103,68 @@ time_t getGraphTimeAsTimestamp(string datetime)
   return mktime(&tm);// + 60 * 60;
 }
 
- void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue)
+
+
+ void json_DeserializeUser(string payload, Meeting_struct jsonMeetingValue, string startTime)
+
 { 
   JSON_Value *root_value;
   JSON_Array *json_array;
   JSON_Object *json_object;
+  string jsonStartTime; 
+  string jsonName;
 
   root_value = json_parse_string(payload.c_str());
-  
+
   json_object = json_value_get_object(root_value); // json object = full json
   json_array = json_object_get_array(json_object, "value"); //json array = value array
 
   json_object = json_array_get_object(json_array, 0); //json object = value array (value) 
+
+  
+  jsonName = json_object_get_string(json_object, "scheduleId"); //Get name
+  jsonName = jsonName.substr(0, jsonName.size() - 14);
+
   json_array = json_object_get_array(json_object, "scheduleItems"); // json array = scheduleItemsArray in Value array
 
   for (size_t i = 0; i < json_array_get_count(json_array); i++) // für jedes scheduleitems array in value array
   {
     json_object = json_array_get_object(json_array, i);
-
-    if (!string(json_object_get_string(json_object, "location")).compare( jsonMeetingValue.location))
-    {   
-      jsonMeetingValue.organizer_name = jsonMeetingValue.subject;
-
-      jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));   
     
-      v_Meetings.emplace_back(jsonMeetingValue);
-    }          
+
+    if (json_object_get_boolean(json_object, "isPrivate") == 1)
+    {
+      
+      json_object = (json_object_get_object(json_object, "start")); //Get Date
+      jsonStartTime = json_object_get_string(json_object, "dateTime");
+      jsonStartTime = jsonStartTime.substr(0, jsonStartTime.size() - 8);
+
+
+      if (jsonStartTime == startTime)
+      {
+        
+
+        jsonMeetingValue.organizer_name = jsonName;
+        jsonMeetingValue.subject = "Privater Termin";
+        
+        v_Meetings.emplace_back(jsonMeetingValue);
+      } 
+    }
+    else
+    {
+      if (!string(json_object_get_string(json_object, "location")).compare( jsonMeetingValue.location))
+      {   
+
+        jsonMeetingValue.organizer_name = jsonName;
+        jsonMeetingValue.subject = string(json_object_get_string(json_object, "subject"));   
+
+        v_Meetings.emplace_back(jsonMeetingValue);
+      } 
+      
+    } 
+
+    
+
   }
   json_value_free(root_value);
 }
@@ -236,11 +274,10 @@ void getJson()
     startTime = startTime.substr(0, startTime.size() - 8);
     endTime = endTime.substr(0, endTime.size() - 8);
     
+
     client.POST(("{\"schedules\": [\"" + jsonObject.subject.substr(0, jsonObject.subject.size() - 1) + "@bachmann.info\"], \"startTime\": { \"dateTime\": \"" + startTime +"\", \"timeZone\": \"Europe/Berlin\" },\"endTime\": { \"dateTime\": \"" + endTime +"\", \"timeZone\": \"Europe/Berlin\"  }, \"availabilityViewInterval\": 5}").c_str());
     
-    json_DeserializeUser(client.getString().c_str(), jsonObject);
-
-    v_Meetings.emplace_back(jsonObject);
+    json_DeserializeUser(client.getString().c_str(), jsonObject, startTime);
   }   
   
   json_value_free(root_value);
@@ -248,8 +285,28 @@ void getJson()
 
 void loop() 
 {
+
   getJson();
   
+
+
+  v_Meetings.clear();
+ 
+  getJson();
+  
+  for (size_t i = 0; i < v_Meetings.size(); i++)
+  {
+    std::cout << "Meeting " << i << ":\n";
+    std::cout << "    " << "Subject: " << v_Meetings[i].subject << "\n";
+    printf("    Start: %ld\n", v_Meetings[i].start_timestamp);
+    printf("    End: %ld\n", v_Meetings[i].end_timestamp);
+    std::cout << "    " << "Organizer_name: " << v_Meetings[i].organizer_name << "\n";
+    std::cout << "    " << "Sensitivity: " << v_Meetings[i].sensitivity << "\n";
+  }
+  
+  
+
+
   calender_text(Raumname, Raumnummer, getTime());
   
   // deep sleep 
